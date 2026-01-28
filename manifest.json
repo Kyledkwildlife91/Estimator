@@ -1,0 +1,29 @@
+{
+  "name": "Estimate Generator",
+  "short_name": "Estimator",
+  /*
+   * The start_url controls which page is loaded when the app is launched from
+   * the home screen.  Use the current directory ("./") so the browser will
+   * load whatever the default file is at the root of your site (usually
+   * index.html).  This prevents 404s when your app is installed and the
+   * filename changes (for example, from estimate.html to index.html).
+   */
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f9f9f9",
+  "theme_color": "#5f725d",
+  "description": "A simple AI-powered estimate generator for field work.",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

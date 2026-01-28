@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estimate Generator</title>
+    <!-- PWA metadata and manifest link -->
+    <!-- Updated theme color to match brand green -->
+    <meta name="theme-color" content="#5f725d">
+    <link rel="manifest" href="manifest.json">
+    <style>
+        /* Modernized styles for a more polished look */
+        :root {
+            /*
+             * Color palette customized for the client's brand.  The base green
+             * colour (#5f725d) is used for both primary and accent elements.  A
+             * darker shade (#4c5b4a) is derived by darkening the base, while a
+             * lighter shade (#7b9279) is created by lightening the base.  These
+             * variables can be adjusted to fine‑tune the look and feel.
+             */
+            --primary-color: #5f725d;
+            --primary-dark: #4c5b4a;
+            --accent-color: #7b9279;
+            --accent-dark: #4c5b4a;
+            --danger-color: #d9534f;
+            --danger-dark: #c9302c;
+            --bg-color: #f4f6fa;
+            --card-bg: #ffffff;
+            --border-radius: 10px;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --text-color: #333333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            line-height: 1.5;
+        }
+
+        h1, h2, h3 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        form {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        input[type="text"], input[type="number"], input[type="date"], textarea {
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            border: 1px solid #cfd8e3;
+            border-radius: var(--border-radius);
+            box-sizing: border-box;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+        }
+
+        textarea {
+            resize: vertical;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 1.5rem;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+        }
+
+        th {
+            /* Use a very light green for table header backgrounds */
+            background-color: #dee3dd;
+            color: var(--primary-dark);
+            font-weight: 600;
+            /* subtle border in a complementary green */
+            border-bottom: 2px solid #c1cfc0;
+        }
+
+        tr:nth-child(even) td {
+            /* alternate row colour: soft off‑white with a hint of green */
+            background-color: #f0f3ef;
+        }
+
+        td {
+            border-bottom: 1px solid #d9e0dc;
+        }
+
+        .actions {
+            text-align: right;
+            margin-top: 2rem;
+        }
+
+        button {
+            padding: 0.6rem 1.2rem;
+            margin-right: 0.5rem;
+            background-color: var(--primary-color);
+            color: #fff;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: background-color 0.2s ease;
+        }
+
+        button:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .remove-btn {
+            background-color: var(--danger-color);
+        }
+
+        .remove-btn:hover {
+            background-color: var(--danger-dark);
+        }
+
+        /* Totals section */
+        .totals {
+            max-width: 320px;
+            float: right;
+            margin-top: 2rem;
+            background: #f9fbfe;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+
+        /* Style read-only summary and bullet textareas */
+        textarea[readonly] {
+            background-color: #f9fbfe;
+            border-color: #e0e7f1;
+            border-radius: var(--border-radius);
+            padding: 0.75rem;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .totals div {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.6rem;
+            font-size: 0.9rem;
+        }
+
+        .print-button {
+            background-color: var(--accent-color);
+        }
+
+        .print-button:hover {
+            background-color: var(--accent-dark);
+        }
+
+        @media print {
+            body {
+                background: #fff;
+            }
+            form {
+                box-shadow: none;
+                border: none;
+                padding: 0;
+            }
+            button {
+                display: none;
+            }
+        }
+
+        /* --- Popup modal (used for safety checks & misc hours) --- */
+        #modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 9999;
+        }
+        #modal-overlay.show { display: flex; }
+        #modal {
+            width: min(520px, 100%);
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        #modal header {
+            padding: 14px 16px;
+            background: #5f725d;
+            color: #fff;
+            font-weight: 700;
+        }
+        #modal .content { padding: 16px; }
+        #modal .modal-field { margin-bottom: 12px; }
+        #modal .modal-field label { display: block; margin-bottom: 6px; font-weight: 700; }
+        #modal select, #modal input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+        #modal .modal-hint { margin: 10px 0 0; font-size: 0.9rem; color: #555; }
+        #modal footer { padding: 12px 16px; display: flex; justify-content: flex-end; gap: 10px; }
+        #modal footer button {
+            margin: 0;
+            background: #5f725d;
+        }
+        #modal footer button:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <h1>Estimate Generator</h1>
+    <form id="estimate-form" onsubmit="return false;">
+        <div class="form-group">
+            <label for="client-name">Client Name</label>
+            <input type="text" id="client-name" placeholder="Enter client or customer name"/>
+        </div>
+        <div class="form-group">
+            <label for="estimate-date">Estimate Date</label>
+            <input type="date" id="estimate-date" />
+        </div>
+        <div class="form-group">
+            <label for="estimate-number">Estimate Number</label>
+            <input type="text" id="estimate-number" placeholder="e.g. EST-1001" />
+        </div>
+        <div class="form-group">
+            <label for="valid-until">Valid Until</label>
+            <input type="date" id="valid-until" />
+        </div>
+
+        <!-- AI-powered description entry -->
+        <h2>Work Description</h2>
+        <div class="form-group">
+            <label for="work-description">Describe the work to be done</label>
+            <textarea id="work-description" rows="4" placeholder="e.g. Paint 1000 sqft of walls with two coats, install new door"></textarea>
+        </div>
+        <button type="button" id="generate-btn" style="margin-bottom:1rem;">Generate Estimate from Description</button>
+
+        <h2>Line Items</h2>
+        <table id="items-table">
+            <thead>
+                <tr>
+                    <th style="width:40%">Description</th>
+                    <th style="width:15%">Quantity</th>
+                    <th style="width:20%">Rate ($)</th>
+                    <th style="width:20%">Amount ($)</th>
+                    <th style="width:5%">Delete</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Rows will be inserted dynamically -->
+            </tbody>
+        </table>
+        <button type="button" id="add-item-btn">Add Item</button>
+        <div class="form-group totals">
+            <div>
+                <span>Subtotal:</span>
+                <span id="subtotal">0.00</span>
+            </div>
+            <div>
+                <label for="tax-rate">Tax Rate (%):</label>
+                <input type="number" id="tax-rate" value="0" min="0" step="0.01" style="width:60px;"/>
+            </div>
+            <div>
+                <span>Tax Amount:</span>
+                <span id="tax-amount">0.00</span>
+            </div>
+            <div>
+                <label for="markup-rate">Markup (%):</label>
+                <input type="number" id="markup-rate" value="0" min="0" step="0.01" style="width:60px;" />
+            </div>
+            <div>
+                <span>Markup Amount:</span>
+                <span id="markup-amount">0.00</span>
+            </div>
+            <div>
+                <strong>Total:</strong>
+                <strong id="total">0.00</strong>
+            </div>
+        </div>
+        <div class="form-group" style="clear: both;">
+            <label for="notes">Notes</label>
+            <textarea id="notes" rows="4" placeholder="Additional notes or terms"></textarea>
+        </div>
+
+    <!-- Generated estimate summary (read-only) -->
+    <div class="form-group" style="clear: both;">
+        <label for="estimate-summary">Estimate Summary</label>
+        <textarea id="estimate-summary" rows="6" readonly style="background:#f9f9f9;"></textarea>
+    </div>
+
+    <!-- Bullet point estimate for client copy (read-only) -->
+    <div class="form-group" style="clear: both;">
+        <label for="bullet-summary">Bullet Point Estimate</label>
+        <textarea id="bullet-summary" rows="8" readonly style="background:#f9f9f9;"></textarea>
+    </div>
+        <div class="actions">
+            <button type="button" class="print-button" id="print-btn">Print / Save as PDF</button>
+        </div>
+
+        <!-- System Settings Section -->
+        <h2 style="margin-top:2rem;">System Settings</h2>
+        <button type="button" id="toggle-settings" style="margin-bottom:1rem;">Show/Hide Settings</button>
+        <div id="settings-section" style="display:none; border: 1px solid #ccc; padding: 1rem; border-radius: 4px; background:#f7f7f7;">
+            <!-- Labor Cost Setting -->
+            <h3>Labor Cost</h3>
+            <div class="form-group">
+                <label for="labor-cost">Labor Cost per hour ($)</label>
+                <input type="number" id="labor-cost" value="50" min="0" step="0.01" style="width:100px;"/>
+            </div>
+
+            <!-- Task Cost Mapping -->
+            <h3>Task Cost Mapping</h3>
+            <p>Define keywords and cost per unit. When the keyword appears in the description, the cost will be applied. Use the unit to describe what the cost refers to (e.g., sqft, hour, item).</p>
+            <table id="task-cost-table">
+                <thead>
+                    <tr>
+                        <th style="width:25%">Keyword</th>
+                        <th style="width:15%">Min Cost per Unit ($)</th>
+                        <th style="width:15%">Max Cost per Unit ($)</th>
+                        <th style="width:35%">Unit description</th>
+                        <th style="width:10%">Delete</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Task cost rows will appear here -->
+                </tbody>
+            </table>
+            <button type="button" id="add-task-btn">Add Task</button>
+
+            <!-- Material Cost Mapping -->
+            <h3 style="margin-top:1.5rem;">Material Cost List</h3>
+            <p>Define materials and cost per unit. When the material name appears in the description, the cost will be applied.</p>
+            <table id="material-cost-table">
+                <thead>
+                    <tr>
+                        <th style="width:30%">Material Name</th>
+                        <th style="width:20%">Cost per Unit ($)</th>
+                        <th style="width:40%">Unit description</th>
+                        <th style="width:10%">Delete</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Material cost rows will appear here -->
+                </tbody>
+            </table>
+            <button type="button" id="add-material-btn">Add Material</button>
+        </div>
+    </form>
+
+    <!-- Popup modal used for safety checks and misc labor hours -->
+    <div id="modal-overlay" aria-hidden="true">
+        <div id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <header id="modal-title">Confirm</header>
+            <div class="content" id="modal-body"></div>
+            <footer>
+                <button type="button" id="modal-confirm">Continue</button>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        // Initialize the estimate date to today's date
+        document.getElementById('estimate-date').valueAsDate = new Date();
+        // Estimate number default: current timestamp truncated
+        document.getElementById('estimate-number').value = 'EST-' + Date.now().toString().slice(-6);
+        // Valid until default: 30 days from now
+        var validDate = new Date();
+        validDate.setDate(validDate.getDate() + 30);
+        document.getElementById('valid-until').valueAsDate = validDate;
+
+        const tbody = document.querySelector('#items-table tbody');
+
+        function addRow(description = '', quantity = 1, rate = 0) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" class="description" value="${description}" placeholder="Item description"/></td>
+                <td><input type="number" class="qty" value="${quantity}" min="0" step="0.01"/></td>
+                <td><input type="number" class="rate" value="${rate}" min="0" step="0.01"/></td>
+                <td>$<span class="amount">0.00</span></td>
+                <td><button type="button" class="remove-btn">×</button></td>
+            `;
+            tbody.appendChild(tr);
+            attachRowEvents(tr);
+            updateAmounts();
+        }
+
+        function attachRowEvents(row) {
+            // When quantity or rate changes, update amounts
+            const qtyInput = row.querySelector('.qty');
+            const rateInput = row.querySelector('.rate');
+            qtyInput.addEventListener('input', updateAmounts);
+            rateInput.addEventListener('input', updateAmounts);
+            // Delete row
+            const removeBtn = row.querySelector('.remove-btn');
+            removeBtn.addEventListener('click', function() {
+                row.remove();
+                updateAmounts();
+            });
+        }
+
+        function updateAmounts() {
+            let subtotal = 0;
+            const rows = document.querySelectorAll('#items-table tbody tr');
+            rows.forEach(row => {
+                const qty = parseFloat(row.querySelector('.qty').value) || 0;
+                const rate = parseFloat(row.querySelector('.rate').value) || 0;
+                const amount = qty * rate;
+                row.querySelector('.amount').textContent = amount.toFixed(2);
+                subtotal += amount;
+            });
+            document.getElementById('subtotal').textContent = subtotal.toFixed(2);
+            const taxRate = parseFloat(document.getElementById('tax-rate').value) || 0;
+            const taxAmount = subtotal * (taxRate / 100);
+            document.getElementById('tax-amount').textContent = taxAmount.toFixed(2);
+            // Compute markup amount based on markup rate
+            const markupRate = parseFloat(document.getElementById('markup-rate').value) || 0;
+            const markupAmount = subtotal * (markupRate / 100);
+            document.getElementById('markup-amount').textContent = markupAmount.toFixed(2);
+            const total = subtotal + taxAmount + markupAmount;
+            document.getElementById('total').textContent = total.toFixed(2);
+
+            // If a summary update function exists, refresh the estimate summary
+            if (typeof updateSummary === 'function') {
+                updateSummary();
+            }
+        }
+
+        // Event to handle tax rate change
+        document.getElementById('tax-rate').addEventListener('input', updateAmounts);
+        // Event to handle markup rate change
+        document.getElementById('markup-rate').addEventListener('input', updateAmounts);
+
+        // Add first default row for the line items table
+        addRow();
+
+        // Add item button for manual line items
+        document.getElementById('add-item-btn').addEventListener('click', function() {
+            addRow();
+        });
+
+        // Print button: prints the form (browser print dialog can save as PDF)
+        document.getElementById('print-btn').addEventListener('click', function() {
+            window.print();
+        });
+
+        /* ====== System Settings functionality ====== */
+        // Toggle the settings section visibility
+        const settingsSection = document.getElementById('settings-section');
+        document.getElementById('toggle-settings').addEventListener('click', function() {
+            if (settingsSection.style.display === 'none' || settingsSection.style.display === '') {
+                settingsSection.style.display = 'block';
+            } else {
+                settingsSection.style.display = 'none';
+            }
+        });
+
+        // Helper functions to add task and material rows
+        function addTaskRow(keyword = '', cost = 0, unit = '') {
+            const tBody = document.querySelector('#task-cost-table tbody');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" class="task-keyword" value="${keyword}" placeholder="e.g. caulking"/></td>
+                <td><input type="number" class="task-cost-min" value="${Array.isArray(cost) ? cost[0] : cost}" min="0" step="0.01"/></td>
+                <td><input type="number" class="task-cost-max" value="${Array.isArray(cost) ? cost[1] : ''}" min="0" step="0.01"/></td>
+                <td><input type="text" class="task-unit" value="${unit}" placeholder="e.g. foot, sqft"/></td>
+                <td><button type="button" class="remove-task remove-btn">×</button></td>
+            `;
+            tBody.appendChild(tr);
+            // Delete task row
+            tr.querySelector('.remove-task').addEventListener('click', function() {
+                tr.remove();
+            });
+        }
+        function addMaterialRow(name = '', cost = 0, unit = '') {
+            const tBody = document.querySelector('#material-cost-table tbody');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" class="material-name" value="${name}" placeholder="e.g. paint"/></td>
+                <td><input type="number" class="material-cost" value="${cost}" min="0" step="0.01"/></td>
+                <td><input type="text" class="material-unit" value="${unit}" placeholder="e.g. gallon"/></td>
+                <td><button type="button" class="remove-material remove-btn">×</button></td>
+            `;
+            tBody.appendChild(tr);
+            tr.querySelector('.remove-material').addEventListener('click', function() {
+                tr.remove();
+            });
+        }
+
+        // Event listeners for adding new task/material entries
+        document.getElementById('add-task-btn').addEventListener('click', function() {
+            addTaskRow();
+        });
+        document.getElementById('add-material-btn').addEventListener('click', function() {
+            addMaterialRow();
+        });
+
+        // Helper functions to collect current task/material mappings
+        function getCurrentTaskMapping() {
+            const rows = document.querySelectorAll('#task-cost-table tbody tr');
+            const mapping = [];
+            rows.forEach(row => {
+                const keyword = row.querySelector('.task-keyword').value.trim();
+                const costMin = parseFloat(row.querySelector('.task-cost-min').value) || 0;
+                const costMaxField = row.querySelector('.task-cost-max');
+                const costMax = costMaxField && costMaxField.value !== '' ? parseFloat(costMaxField.value) : 0;
+                const unit = row.querySelector('.task-unit').value.trim();
+                if (keyword) {
+                    mapping.push({keyword: keyword, costMin: costMin, costMax: costMax, unit: unit});
+                }
+            });
+            return mapping;
+        }
+        function getCurrentMaterialMapping() {
+            const rows = document.querySelectorAll('#material-cost-table tbody tr');
+            const mapping = [];
+            rows.forEach(row => {
+                const name = row.querySelector('.material-name').value.trim();
+                const cost = parseFloat(row.querySelector('.material-cost').value) || 0;
+                const unit = row.querySelector('.material-unit').value.trim();
+                if (name) {
+                    mapping.push({name: name, cost: cost, unit: unit});
+                }
+            });
+            return mapping;
+        }
+
+        // Build a human-friendly summary of the current estimate. This summary lists
+        // each line item with its quantity, rate, and amount, followed by the subtotal,
+        // tax, markup, and total. It populates the read-only textarea with id
+        // "estimate-summary".
+        function updateSummary() {
+            const rows = document.querySelectorAll('#items-table tbody tr');
+            let lines = [];
+            rows.forEach(row => {
+                const desc = row.querySelector('.description').value.trim();
+                const qtyVal = row.querySelector('.qty').value;
+                const rateVal = row.querySelector('.rate').value;
+                const amountVal = row.querySelector('.amount').textContent;
+                if (desc) {
+                    const qty = qtyVal !== '' ? parseFloat(qtyVal) : 0;
+                    const rate = rateVal !== '' ? parseFloat(rateVal) : 0;
+                    // Format line item
+                    lines.push(`${desc}: ${qty} × $${rate.toFixed(2)} = $${amountVal}`);
+                }
+            });
+            // Append totals
+            const subtotal = document.getElementById('subtotal').textContent;
+            const taxAmount = document.getElementById('tax-amount').textContent;
+            const markupAmount = document.getElementById('markup-amount').textContent;
+            const total = document.getElementById('total').textContent;
+            lines.push('');
+            lines.push(`Subtotal: $${subtotal}`);
+            lines.push(`Tax: $${taxAmount}`);
+            lines.push(`Markup: $${markupAmount}`);
+            lines.push(`Total: $${total}`);
+            document.getElementById('estimate-summary').value = lines.join('\n');
+
+            // Also update bullet point summary for client copy
+            if (typeof updateBulletSummary === 'function') {
+                updateBulletSummary();
+            }
+        }
+
+        // Build a bullet-point summary of the estimate that is easy to copy/paste for clients.
+        // It converts each line item into a descriptive bullet with approximate quantities.
+        function updateBulletSummary() {
+            const bulletLines = [];
+            const rows = document.querySelectorAll('#items-table tbody tr');
+            rows.forEach(row => {
+                const descRaw = row.querySelector('.description').value.trim();
+                const desc = descRaw.toLowerCase();
+                const qtyVal = parseFloat(row.querySelector('.qty').value) || 0;
+                // Skip material-only lines
+                if (desc.includes('(material)')) return;
+                // Determine plural suffix
+                const plural = qtyVal === 1 ? '' : 's';
+                // Define templates for each recognized service
+                const templates = {
+                    // Use more descriptive, sales-friendly phrasing for each service. Parenthetical
+                    // units make it clear when quantities are approximate.
+                    'caulking': 'Caulk the gap in the fascia (approx. {qty} ft).',
+                    'wildlife prevention covers': 'Install wildlife prevention covers over {qty} attic vent{plural}.',
+                    'xl wildlife prevention covers': 'Install {qty} XL wildlife prevention cover{plural}.',
+                    'soffit returns': 'Seal {qty} soffit return{plural} on the roof.',
+                    'siding corners': 'Seal {qty} siding corner{plural}.',
+                    'siding wrap': 'Install metal under the siding (siding wrap) (approx. {qty} ft).',
+                    'ridge guard': 'Install ridge guard to the ridge cap (approx. {qty} ft).',
+                    'bird intimidators': 'Install {qty} bird intimidator{plural}.',
+                    'trap set': 'Set {qty} trap{plural} for wildlife/mice.',
+                    'follow ups': 'Perform {qty} follow-up visit{plural}.',
+                    'attic full remediation': 'Perform attic remediation (approx. {qty} sq ft).',
+                    'basement remediation': 'Perform basement remediation (approx. {qty} ft).'
+                    ,
+                    'steep roof safety setup': 'Provide safety setup for steep roof.'
+                    ,
+                    'paint': 'Paint approximately {qty} square feet.'
+                };
+                let template = templates[desc] || null;
+                if (!template) {
+                    // Attempt to map synonyms to base keys
+                    // Use lowercased description to map synonyms to base template keys
+                    if (desc === 'caulk') template = templates['caulking'];
+                    else if (desc === 'wildlife covers' || desc === 'wildlife cover') template = templates['wildlife prevention covers'];
+                    else if (desc === 'xl covers' || desc === 'xl cover') template = templates['xl wildlife prevention covers'];
+                    else if (desc === 'intimidators' || desc === 'bird intimidator') template = templates['bird intimidators'];
+                }
+                if (template) {
+                    let bullet = template
+                        .replace('{qty}', qtyVal)
+                        .replace('{plural}', plural);
+                    bulletLines.push('• ' + bullet);
+                } else if (desc) {
+                    // Fallback: generic description
+                    bulletLines.push('• ' + descRaw + ' – ' + qtyVal);
+                }
+            });
+            document.getElementById('bullet-summary').value = bulletLines.join('\n');
+        }
+
+        // Generate estimate from description using defined mappings
+
+        // --- Popup modal helpers (used to prevent missing height/steepness/hour details) ---
+        function openModal({ title, bodyHtml, confirmText = 'Continue', disableConfirmUntilValid = false, validateFn = null }) {
+            return new Promise(resolve => {
+                const overlay = document.getElementById('modal-overlay');
+                const titleEl = document.getElementById('modal-title');
+                const bodyEl = document.getElementById('modal-body');
+                const confirmBtn = document.getElementById('modal-confirm');
+
+                titleEl.textContent = title;
+                bodyEl.innerHTML = bodyHtml;
+                confirmBtn.textContent = confirmText;
+
+                function syncValidity() {
+                    if (!disableConfirmUntilValid || !validateFn) return;
+                    confirmBtn.disabled = !validateFn();
+                }
+
+                // Enable/disable confirm in real time if requested
+                if (disableConfirmUntilValid && validateFn) {
+                    bodyEl.addEventListener('input', syncValidity);
+                    bodyEl.addEventListener('change', syncValidity);
+                }
+
+                confirmBtn.onclick = () => {
+                    overlay.classList.remove('show');
+                    // Cleanup listeners
+                    bodyEl.removeEventListener('input', syncValidity);
+                    bodyEl.removeEventListener('change', syncValidity);
+                    resolve(true);
+                };
+
+                overlay.classList.add('show');
+                // initial state
+                syncValidity();
+            });
+        }
+
+        async function soffitWorkSafetyCheck() {
+            const ladderId = 'soffit-ladder';
+            const steepId = 'soffit-steep';
+            await openModal({
+                title: 'Soffit Work Safety Check',
+                bodyHtml: `
+                    <div class="modal-field">
+                        <label for="${ladderId}">Ladder height</label>
+                        <select id="${ladderId}">
+                            <option value="">Select…</option>
+                            <option value="under">24 ft or under</option>
+                            <option value="over">Over 24 ft</option>
+                        </select>
+                    </div>
+                    <div class="modal-field">
+                        <label for="${steepId}">Roof pitch / steepness</label>
+                        <select id="${steepId}">
+                            <option value="">Select…</option>
+                            <option value="no">Not steep</option>
+                            <option value="yes">Steep</option>
+                        </select>
+                    </div>
+                    <p class="modal-hint">These selections help prevent underpricing and missed safety setup.</p>
+                `,
+                confirmText: 'Confirm',
+                disableConfirmUntilValid: true,
+                validateFn: () => {
+                    const ladder = document.getElementById(ladderId)?.value;
+                    const steep = document.getElementById(steepId)?.value;
+                    return !!ladder && !!steep;
+                }
+            });
+
+            const ladder = document.getElementById(ladderId).value;
+            const steep = document.getElementById(steepId).value;
+            return { ladder, steep };
+        }
+
+        async function caulkingHeightCheck() {
+            const id = 'caulk-height';
+            await openModal({
+                title: 'Caulking Height Check',
+                bodyHtml: `
+                    <div class="modal-field">
+                        <label for="${id}">Confirm height</label>
+                        <select id="${id}">
+                            <option value="">Select…</option>
+                            <option value="under">24 ft or under ($10 / ft)</option>
+                            <option value="over">Over 24 ft ($12 / ft)</option>
+                        </select>
+                    </div>
+                `,
+                confirmText: 'Confirm',
+                disableConfirmUntilValid: true,
+                validateFn: () => !!document.getElementById(id)?.value
+            });
+            return document.getElementById(id).value;
+        }
+
+        async function ridgeSteepnessCheck() {
+            const id = 'ridge-steep';
+            await openModal({
+                title: 'Ridge Guard Steepness Check',
+                bodyHtml: `
+                    <div class="modal-field">
+                        <label for="${id}">Is the roof steep?</label>
+                        <select id="${id}">
+                            <option value="">Select…</option>
+                            <option value="no">No ($18 / ft)</option>
+                            <option value="yes">Yes ($22 / ft)</option>
+                        </select>
+                    </div>
+                `,
+                confirmText: 'Confirm',
+                disableConfirmUntilValid: true,
+                validateFn: () => !!document.getElementById(id)?.value
+            });
+            return document.getElementById(id).value;
+        }
+
+        async function miscLaborHoursCheck() {
+            const id = 'misc-hours';
+            await openModal({
+                title: 'Miscellaneous Labor (Time-Based)',
+                bodyHtml: `
+                    <div class="modal-field">
+                        <label for="${id}">Enter hours</label>
+                        <input id="${id}" type="number" min="0" step="0.25" placeholder="e.g., 1.5" />
+                    </div>
+                    <p class="modal-hint">Rate: $150 per hour</p>
+                `,
+                confirmText: 'Add',
+                disableConfirmUntilValid: true,
+                validateFn: () => {
+                    const v = parseFloat(document.getElementById(id)?.value);
+                    return !isNaN(v) && v > 0;
+                }
+            });
+            return parseFloat(document.getElementById(id).value);
+        }
+        async function generateFromDescription() {
+            const description = (document.getElementById('work-description').value || '').toLowerCase();
+            if (!description) return;
+            // Fetch user-defined tasks. If none exist (e.g., settings weren't loaded),
+            // fall back to a built-in default list so estimates still generate.
+            let tasks = getCurrentTaskMapping();
+            if (!tasks || tasks.length === 0) {
+                tasks = [
+                    { keyword: 'caulking', costMin: 10, costMax: 12, unit: 'foot' },
+                    { keyword: 'ridge guard', costMin: 18, costMax: 22, unit: 'foot' },
+                    { keyword: 'soffit returns', costMin: 300, costMax: 300, unit: 'each' },
+                    { keyword: 'siding corners', costMin: 75, costMax: 75, unit: 'each' },
+                    { keyword: 'siding wrap', costMin: 18, costMax: 18, unit: 'foot' },
+                    { keyword: 'wildlife prevention covers', costMin: 125, costMax: 150, unit: 'each' },
+                    { keyword: 'xl wildlife prevention covers', costMin: 350, costMax: 350, unit: 'each' },
+                    { keyword: 'bird intimidators', costMin: 95, costMax: 95, unit: 'each' },
+                    { keyword: 'trap set', costMin: 250, costMax: 250, unit: 'each' },
+                    { keyword: 'follow ups', costMin: 105, costMax: 105, unit: 'each' },
+                    { keyword: 'attic full remediation', costMin: 7, costMax: 10, unit: 'sqft' },
+                    { keyword: 'basement remediation', costMin: 10, costMax: 16, unit: 'foot' },
+                    { keyword: 'paint', costMin: 1.5, costMax: 1.5, unit: 'sqft' }
+                ];
+            }
+            const materials = getCurrentMaterialMapping();
+            const laborCost = parseFloat(document.getElementById('labor-cost').value) || 0;
+
+            // Helper to detect quantity associated with a phrase (keyword or synonym). It
+            // prioritizes numbers appearing before the phrase (e.g., "125 ft siding wrap")
+            // and falls back to numbers appearing after the phrase (e.g., "paint 1000 sqft").
+            // The detection ignores digits separated by any non-digit characters (e.g., units like ft).
+            function detectQuantityForPhrase(desc, phrase) {
+                const escaped = phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                // To avoid capturing unrelated numbers (for example, a markup percentage after a
+                // phrase), we first look for numbers that appear immediately before the task
+                // keyword. If no preceding number is found, we then look for a number that
+                // appears after the keyword.  This order helps prevent false matches such as
+                // "siding wrap ... mark up 15%" from incorrectly using 15 as the quantity for
+                // the siding wrap task.
+                // Only consider numbers that are within a reasonable character distance of the
+                // phrase to avoid picking up unrelated numbers elsewhere in the description.
+                // We search for a number that appears within 30 characters before the phrase. If
+                // none is found, we then search for a number within 30 characters after the
+                // phrase. This prevents cases like "... 125 wildlife covers. Siding wrap 4 ft"
+                // from using 125 as the quantity for siding wrap.
+                const beforeRegex = new RegExp('(\\d+(?:\\.\\d+)?)' + '[^\\d]{0,12}' + escaped, 'i');
+                const beforeMatch = beforeRegex.exec(desc);
+                if (beforeMatch) {
+                    return parseFloat(beforeMatch[1]);
+                }
+                const afterRegex = new RegExp(escaped + '[^\\d]{0,12}(\\d+(?:\\.\\d+)?)', 'i');
+                const afterMatch = afterRegex.exec(desc);
+                if (afterMatch) {
+                    return parseFloat(afterMatch[1]);
+                }
+                return 1;
+            }
+
+            // Helper to detect material quantity by capturing numbers that appear before the material name anywhere in the description.
+            // It matches patterns like "5 gallons of paint" or "paint 5 gallons" by looking for the last numeric value preceding the material keyword.
+            function detectMaterialQuantity(desc, material) {
+                let qty = 1;
+                try {
+                    // Create a global regular expression to capture numbers that precede the material name.
+                    const regex = new RegExp('(\\d+(?:\\.\\d+)?)[^\\d]*' + material, 'g');
+                    const matches = desc.matchAll(regex);
+                    for (const m of matches) {
+                        qty = parseFloat(m[1]);
+                    }
+                } catch (err) {
+                    qty = 1;
+                }
+                return qty;
+            }
+            // Choose an appropriate cost based on task and description
+            function chooseCost(task, desc) {
+                let cost = task.costMin;
+                if (task.costMax && task.costMax > 0) {
+                    const kw = task.keyword.toLowerCase();
+                    // Adjust cost based on simple heuristics specific to each task
+                    switch (kw) {
+                        case 'caulking':
+                            // Determine ladder/height if mentioned. A higher rate applies when work is ABOVE 24 ft.
+                            // We look for patterns like "24 ft ladder", "30ft ladder", etc. If no ladder size is mentioned, default to the lower rate.
+                            const ladderPattern = /(\d+(?:\.\d+)?)\s*(?:ft|foot)\s*(?:ladder|ladders?)/i;
+                            const ladderMatch = desc.match(ladderPattern);
+                            if (ladderMatch) {
+                                const ladderHeight = parseFloat(ladderMatch[1]);
+                                if (!isNaN(ladderHeight) && ladderHeight > 24) {
+                                    cost = task.costMax;
+                                } else {
+                                    cost = task.costMin;
+                                }
+                            } else {
+                                // Fallback: phrases like "above 24 ft" / "over 24 ft" or a ladder height over 24
+                                if (/(above|over)\s*24\s*(ft|foot)/i.test(desc)) {
+                                    cost = task.costMax;
+                                } else if (/\b(25|26|27|28|29|30|31|32|33|34|35|36)\s*(ft|foot)\b/i.test(desc)) {
+                                    cost = task.costMax;
+                                } else {
+                                    cost = task.costMin;
+                                }
+                            }
+                            break;
+                        case 'ridge guard':
+                            // Use higher rate if the roof is steep
+                            if (/steep/.test(desc)) {
+                                cost = task.costMax;
+                            } else {
+                                cost = task.costMin;
+                            }
+                            break;
+                        case 'wildlife prevention covers':
+                            // Use higher rate if description suggests large covers
+                            // Do NOT trigger on "xl" here, since "xl" refers to a separate task (xl wildlife prevention covers)
+                            if (/large|big/.test(desc)) {
+                                cost = task.costMax;
+                            } else {
+                                cost = task.costMin;
+                            }
+                            break;
+                        case 'attic full remediation':
+                        case 'basement remediation':
+                            // Use higher rate if description mentions heavy or severe remediation
+                            if (/heavy|severe|extensive/.test(desc)) {
+                                cost = task.costMax;
+                            } else {
+                                cost = task.costMin;
+                            }
+                            break;
+                        default:
+                            // Default to average of min and max
+                            cost = (task.costMin + task.costMax) / 2;
+                            break;
+                    }
+                }
+                return cost;
+            }
+
+            // For each task keyword found in the description
+            // Define simple synonym mappings for more flexible keyword matching.
+            // Keys correspond to task keywords in lower case and values are arrays of alternative phrases
+            // that should be treated as equivalent. This helps handle user shorthand like "xl covers"
+            // instead of the full keyword "xl wildlife prevention covers".
+            const synonymsMap = {
+                // Core services
+                'soffit returns': ['soffits', 'soffit', 'soffit return', 'soffit returns'],
+                'caulking': ['caulk', 'caulking'],
+                'ridge guard': ['ridge cap', 'ridgeguard'],
+                'bird intimidators': ['intimidator', 'intimidators', 'bird intimidator', 'bird cones', 'cones'],
+                // Covers / vents
+                'wildlife prevention covers': ['roof vent covers', 'roof vent cover', 'vent covers', 'vent cover', 'wildlife covers', 'wildlife cover'],
+                'xl wildlife prevention covers': ['xl covers', 'xl cover', 'xl wildlife covers', 'xl wildlife cover', 'xl prevention covers', 'attic fan'],
+                'exhaust vent cover': ['exhaust vent covers', 'exhaust cover', 'exhaust covers'],
+                'dryer vent cover': ['dryer vent covers', 'dryer vent', 'dryer cover', 'dryer covers'],
+                'exhaust vent cleaning': ['clean exhaust vent', 'exhaust vent clean', 'exhaust cleaning'],
+                // Siding
+                'siding corners': ['corners', 'siding corner'],
+                'siding wrap': ['metal under the siding', 'metal under siding', 'metal behind siding'],
+                // Other
+                'drip edge corner': ['drip edge corners', 'gutter edge corner', 'gutter edge corners'],
+                'pipes and lines': ['ac line', 'ac lines', 'electrical line', 'electrical lines', 'gas line', 'gas lines', 'pipes', 'lines'],
+                'garage frame': ['garage frame', 'garage opening', 'metal over the frame', 'metal over garage frame'],
+                'follow ups': ['follow up', 'follow-up', 'followups', 'return visit', 'check back'],
+                'misc labor': ['bird mites', 'bird mite', 'mites', 'nesting', 'remove nesting', 'nest removal', 'treat', 'treatment', 'time based', 'hourly'],
+                'trap set': ['trap', 'traps', 'trap sets']
+            };
+
+            // Track items that require extra confirmation via popups
+            let needsSoffitSafetyCheck = false;
+            let needsCaulkingHeightCheck = false;
+            let needsRidgeSteepnessCheck = false;
+            let needsMiscLaborHours = false;
+
+            tasks.forEach(task => {
+                const keyword = task.keyword.toLowerCase();
+                // Determine if the base keyword or any of its synonyms appear in the description.
+                const synonyms = synonymsMap[keyword] || [];
+                // track which string (keyword or synonym) matched to detect quantity relative to that phrase.
+                let matchedPhrase = '';
+                if (description.includes(keyword)) {
+                    matchedPhrase = keyword;
+                } else {
+                    for (const syn of synonyms) {
+                        if (description.includes(syn)) {
+                            matchedPhrase = syn;
+                            break;
+                        }
+                    }
+                }
+                if (!matchedPhrase) return;
+
+                // Flag popups
+                if (keyword === 'soffit returns') needsSoffitSafetyCheck = true;
+                if (keyword === 'caulking') needsCaulkingHeightCheck = true;
+                if (keyword === 'ridge guard') needsRidgeSteepnessCheck = true;
+                if (keyword === 'misc labor') {
+                    // Add this after prompting for hours
+                    needsMiscLaborHours = true;
+                    return;
+                }
+
+                const rate = chooseCost(task, description);
+                // Special handling: pipes & lines is a single flat charge (qty=1)
+                if (keyword === 'pipes and lines') {
+                    addRow(task.keyword, 1, rate);
+                    return;
+                }
+
+                // Default: determine quantity relative to the matched phrase
+                const qty = detectQuantityForPhrase(description, matchedPhrase);
+                addRow(task.keyword, qty, rate);
+            });
+
+            // --- Required popups ---
+            if (needsSoffitSafetyCheck) {
+                const res = await soffitWorkSafetyCheck();
+                // If steep, add safety setup automatically (per your rules)
+                if (res.steep === 'yes') {
+                    const already = Array.from(document.querySelectorAll('#items-table tbody tr')).some(tr =>
+                        (tr.querySelector('.description')?.value || '').toLowerCase().trim() === 'steep roof safety setup'
+                    );
+                    if (!already) addRow('Steep roof safety setup', 1, 495);
+                }
+            }
+
+            if (needsCaulkingHeightCheck) {
+                const h = await caulkingHeightCheck();
+                const newRate = (h === 'over') ? 12 : 10;
+                // Update any existing caulking rows to match chosen rate
+                Array.from(document.querySelectorAll('#items-table tbody tr')).forEach(tr => {
+                    const d = (tr.querySelector('.description')?.value || '').toLowerCase();
+                    if (d.trim() === 'caulking' || d.includes('caulking')) {
+                        tr.querySelector('.rate').value = newRate;
+                    }
+                });
+            }
+
+            if (needsRidgeSteepnessCheck) {
+                const s = await ridgeSteepnessCheck();
+                const newRate = (s === 'yes') ? 22 : 18;
+                Array.from(document.querySelectorAll('#items-table tbody tr')).forEach(tr => {
+                    const d = (tr.querySelector('.description')?.value || '').toLowerCase();
+                    if (d.trim() === 'ridge guard' || d.includes('ridge guard') || d.includes('ridge cap')) {
+                        tr.querySelector('.rate').value = newRate;
+                    }
+                });
+            }
+
+            if (needsMiscLaborHours) {
+                const hours = await miscLaborHoursCheck();
+                addRow('Misc labor', hours, 150);
+            }
+            // Materials
+            materials.forEach(mat => {
+                const nameLower = mat.name.toLowerCase();
+                if (description.includes(nameLower)) {
+                    // detect material quantity by capturing numbers that appear before the material keyword
+                    const quantity = detectMaterialQuantity(description, nameLower);
+                    addRow(mat.name + ' (material)', quantity, mat.cost);
+                }
+            });
+            // Detect labor hours (e.g. "8 hours", "10 hr")
+            const laborRegex = /(\d+(?:\.\d+)?)\s*(hours|hrs|hour|hr)/i;
+            const laborMatch = description.match(laborRegex);
+            if (laborMatch) {
+                const hours = parseFloat(laborMatch[1]);
+                if (hours && laborCost) {
+                    addRow('Labor', hours, laborCost);
+                }
+            }
+
+            // If description mentions a steep roof that requires safety equipment,
+            // add a fixed-cost line item. We look for "steep" and "roof" in
+            // proximity to infer steep roof. The cost is $495 per project.
+            const steepRoofRegex = /(steep[^\n]*roof|roof[^\n]*steep)/i;
+            if (steepRoofRegex.test(description)) {
+                // Avoid adding duplicate steep-roof lines by checking if one already exists
+                const existingRows = document.querySelectorAll('#items-table tbody tr');
+                let hasSteep = false;
+                existingRows.forEach(row => {
+                    const descVal = row.querySelector('.description').value.trim().toLowerCase();
+                    if (descVal === 'steep roof safety setup' || descVal === 'steep roof safety equipment' || descVal === 'steep roof') {
+                        hasSteep = true;
+                    }
+                });
+                if (!hasSteep) {
+                    addRow('Steep roof safety setup', 1, 495);
+                }
+            }
+
+            // Detect markup percentage mentioned in the description, e.g., "mark up 15" or "markup 10 percent"
+            const markupRegex = /(mark\s*up|markup)\s*(\d+(?:\.\d+)?)/i;
+            const markupMatch = description.match(markupRegex);
+            if (markupMatch) {
+                const markupValue = parseFloat(markupMatch[2]);
+                if (!isNaN(markupValue)) {
+                    document.getElementById('markup-rate').value = markupValue;
+                }
+            }
+            // Update totals after adding generated rows
+            updateAmounts();
+        }
+        // Attach event to generate button
+        document.getElementById('generate-btn').addEventListener('click', generateFromDescription);
+
+        // Provide a couple of example task and material rows by default for illustration
+        // Users can adjust or remove these entries as needed
+        // Predefined tasks and materials with cost ranges where applicable
+        addTaskRow('caulking', [10, 12], 'foot');
+        addTaskRow('ridge guard', [18, 22], 'foot');
+        addTaskRow('soffit returns', 300, 'each');
+        addTaskRow('siding corners', 75, 'each');
+        addTaskRow('siding wrap', 18, 'foot');
+        addTaskRow('wildlife prevention covers', [125, 150], 'each');
+        addTaskRow('xl wildlife prevention covers', 350, 'each');
+        addTaskRow('bird intimidators', 95, 'each');
+        addTaskRow('trap set', 250, 'each');
+        addTaskRow('follow ups', 105, 'each');
+        addTaskRow('exhaust vent cover', 125, 'each');
+        addTaskRow('dryer vent cover', 125, 'each');
+        addTaskRow('exhaust vent cleaning', 125, 'each');
+        addTaskRow('drip edge corner', 95, 'each');
+        addTaskRow('pipes and lines', 150, 'job');
+        addTaskRow('garage frame', 125, 'each');
+        addTaskRow('misc labor', 150, 'hour');
+        addTaskRow('steep roof safety setup', 495, 'each');
+        addTaskRow('attic full remediation', [7, 10], 'sqft');
+        addTaskRow('basement remediation', [10, 16], 'foot');
+        addTaskRow('paint', 1.5, 'sqft');
+        // materials
+        addMaterialRow('paint', 25, 'gallon');
+
+        // Register the service worker for PWA functionality. This enables offline
+        // caching and allows the user to install the app on their device.
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('sw.js').catch(function(err) {
+                    console.log('Service worker registration failed: ', err);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
